@@ -39,13 +39,15 @@ class LoggerAppenderFile extends LoggerAppender {
 	/**
 	 * If set to true, the file is locked before appending. This allows 
 	 * concurrent access. However, appending without locking is faster so
-	 * it should be used where appropriate.
+	 * it should be used where appropriate. If all appends are less than
+	 * the filesystem block size (usually around 4k), then fwrite guarantees
+	 * atomic writes, so no locking is needed.
 	 * 
 	 * TODO: make this a configurable parameter
 	 * 
 	 * @var boolean
 	 */
-	protected $locking = true;
+	protected $locking = false;
 	
 	/**
 	 * If set to true, appends to file. Otherwise overwrites it.
@@ -119,7 +121,7 @@ class LoggerAppenderFile extends LoggerAppender {
 	 */
 	protected function write($string) {
 		// Lazy file open
-		if(!isset($this->fp)) {
+		if(!$this->fp) {
 			if ($this->openFile() === false) {
 				return; // Do not write if file open failed.
 			}
